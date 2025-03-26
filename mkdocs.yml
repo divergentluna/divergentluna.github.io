@@ -1,0 +1,60 @@
+site_name: Mahsa's Blog
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: black
+      accent: gray
+      toggle:
+        icon: material/brightness-2
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: gray
+      toggle:
+        icon: material/white-balance-sunny
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: material/cloud-braces
+  favicon: assets/favicon.ico
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - search.share
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/divergentluna
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/mahsasoleimani/
+
+copyright: Copyright &copy; 2025 Mahsa Soleimani
+
+nav:
+  - Home: index.md
+  - Posts:
+      - Linux:
+          - Linux Network NameSpaces: posts/linux/linux-netns.md
+  # - About: aboutme.md #TODO
+
