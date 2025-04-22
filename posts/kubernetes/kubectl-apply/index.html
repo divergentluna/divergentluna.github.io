@@ -1,0 +1,984 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../linux/linux-netns/">
+      
+      
+      
+      <link rel="icon" href="../../../assets/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.12">
+    
+    
+      
+        <title>Understanding `kubectl apply` in Kubernetes - Mahsa's Blog</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.2afb09e1.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="gray">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#starting-point-kubectl-apply" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Mahsa&#39;s Blog" class="md-header__button md-logo" aria-label="Mahsa's Blog" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.86 12.5A4.31 4.31 0 0 0 19 11c0-1.95-.68-3.6-2.04-4.96S13.95 4 12 4c-1.58 0-3 .47-4.25 1.43s-2.08 2.19-2.5 3.72c-1.25.28-2.29.93-3.08 1.95S1 13.28 1 14.58c0 1.51.54 2.8 1.61 3.85C3.69 19.5 5 20 6.5 20h12c1.25 0 2.31-.44 3.19-1.31.87-.88 1.31-1.94 1.31-3.19q0-1.725-1.14-3M10.5 10H9v1c0 1.11-.89 2-2 2a2 2 0 0 1 2 2v1h1.5v2H9a2 2 0 0 1-2-2v-1c0-.55-.45-1-1-1h-.5v-2H6c.55 0 1-.45 1-1v-1c0-1.1.9-2 2-2h1.5zm8 4H18c-.55 0-1 .45-1 1v1c0 1.11-.89 2-2 2h-1.5v-2H15v-1c0-1.1.9-2 2-2a2 2 0 0 1-2-2v-1h-1.5V8H15a2 2 0 0 1 2 2v1c0 .55.45 1 1 1h.5z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Mahsa's Blog
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Understanding `kubectl apply` in Kubernetes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="gray"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 2c-1.82 0-3.53.5-5 1.35C8 5.08 10 8.3 10 12s-2 6.92-5 8.65C6.47 21.5 8.18 22 10 22a10 10 0 0 0 10-10A10 10 0 0 0 10 2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="gray"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m3.55 19.09 1.41 1.41 1.8-1.79-1.42-1.42M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6c0-3.32-2.69-6-6-6m8 7h3v-2h-3m-2.76 7.71 1.8 1.79 1.41-1.41-1.79-1.8M20.45 5l-1.41-1.4-1.8 1.79 1.42 1.42M13 1h-2v3h2M6.76 5.39 4.96 3.6 3.55 5l1.79 1.81zM1 13h3v-2H1m12 9h-2v3h2"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../linux/linux-netns/" class="md-tabs__link">
+          
+  
+  
+  Posts
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Mahsa&#39;s Blog" class="md-nav__button md-logo" aria-label="Mahsa's Blog" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.86 12.5A4.31 4.31 0 0 0 19 11c0-1.95-.68-3.6-2.04-4.96S13.95 4 12 4c-1.58 0-3 .47-4.25 1.43s-2.08 2.19-2.5 3.72c-1.25.28-2.29.93-3.08 1.95S1 13.28 1 14.58c0 1.51.54 2.8 1.61 3.85C3.69 19.5 5 20 6.5 20h12c1.25 0 2.31-.44 3.19-1.31.87-.88 1.31-1.94 1.31-3.19q0-1.725-1.14-3M10.5 10H9v1c0 1.11-.89 2-2 2a2 2 0 0 1 2 2v1h1.5v2H9a2 2 0 0 1-2-2v-1c0-.55-.45-1-1-1h-.5v-2H6c.55 0 1-.45 1-1v-1c0-1.1.9-2 2-2h1.5zm8 4H18c-.55 0-1 .45-1 1v1c0 1.11-.89 2-2 2h-1.5v-2H15v-1c0-1.1.9-2 2-2a2 2 0 0 1-2-2v-1h-1.5V8H15a2 2 0 0 1 2 2v1c0 .55.45 1 1 1h.5z"/></svg>
+
+    </a>
+    Mahsa's Blog
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Posts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Posts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Linux
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Linux
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../linux/linux-netns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Linux Network NameSpaces
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Kubernetes
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Kubernetes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Understanding `kubectl apply` in Kubernetes
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Understanding `kubectl apply` in Kubernetes
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#starting-point-kubectl-apply" class="md-nav__link">
+    <span class="md-ellipsis">
+      Starting Point: kubectl apply
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kubernetes-a-system-of-apis-and-a-key-value-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      Kubernetes: A System of APIs and a Key-Value Store
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-3-way-reconciliation-loop-api-server-etcd-controllers" class="md-nav__link">
+    <span class="md-ellipsis">
+      The 3-Way Reconciliation Loop: API Server, etcd, Controllers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#who-watches-over-kubernetes-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Who Watches Over Kubernetes Objects?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-does-a-pod-live-the-scheduler-decides" class="md-nav__link">
+    <span class="md-ellipsis">
+      Where Does a Pod Live? The Scheduler Decides
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-the-pod-is-born" class="md-nav__link">
+    <span class="md-ellipsis">
+      When the Pod Is Born
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-the-kubelet-pull-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Does the Kubelet Pull Images?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pod-lifecycle-and-maintenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pod Lifecycle and Maintenance
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-about-kube-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      What about kube-proxy?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events-and-observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Events and Observability
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#to-summarize" class="md-nav__link">
+    <span class="md-ellipsis">
+      To summarize
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Understanding `kubectl apply` in Kubernetes</h1>
+
+<p>Kubernetes is often seen as a world of Pods, but it's just as much a world of controllers. To understand how everything works in a Kubernetes environment, the key question to ask is:</p>
+<blockquote>
+<p><strong>What happens when we apply a manifest via <code>kubectl</code> to a cluster?</strong></p>
+</blockquote>
+<p>This is similar in spirit to the classic interview question:</p>
+<blockquote>
+<p><strong>What happens when you type a URL into your browser?</strong></p>
+</blockquote>
+<hr />
+<h3 id="starting-point-kubectl-apply">Starting Point: <code>kubectl apply</code><a class="headerlink" href="#starting-point-kubectl-apply" title="Permanent link">&para;</a></h3>
+<p>When we apply a manifest using <code>kubectl</code>, we are effectively sending an HTTPS request to the Kubernetes API server (<code>kube-apiserver</code>). Depending on whether the resource exists, the request could use <code>POST</code>, <code>PUT</code>, or <code>PATCH</code>. The <code>kubectl</code> client handles this intelligently using a <strong>3-way strategic merge</strong>:</p>
+<ul>
+<li>It compares the previous configuration (last-applied), the current cluster state, and the new manifest.</li>
+<li>The last-applied configuration is stored in an annotation on the resource: <code>kubectl.kubernetes.io/last-applied-configuration</code>.</li>
+<li>This allows for non-destructive updates and idempotent operations.</li>
+</ul>
+<p>This makes <code>kubectl apply</code> different from <code>create</code> or <code>replace</code>, which respectively fail if a resource exists or overwrite everything.</p>
+<p>You could simulate part of this interaction using <code>curl</code>:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-k<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer &lt;TOKEN&gt;&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">     </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/yaml&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">     </span>--data-binary<span class="w"> </span>@manifest.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">     </span>https://&lt;K8S-API&gt;/api/v1/namespaces/&lt;namespace&gt;/pods
+</code></pre></div>
+<p>This command only works for <strong>creating</strong> resources and requires the correct API path:</p>
+<ul>
+<li>Deployments: <code>/apis/apps/v1/namespaces/default/deployments</code></li>
+<li>Services: <code>/api/v1/namespaces/default/services</code></li>
+</ul>
+<p>Once validated, the <code>kubectl</code> client sends an HTTPS request from your machine to the <code>kube-apiserver</code>, a component of the Kubernetes control plane.</p>
+<blockquote>
+<p><strong>Note</strong>: Manifests can be written in <code>yaml</code> or <code>json</code>, both of which are understood by <code>kubectl</code>.</p>
+<p><strong>Note</strong>: If you directly edit a resource using <code>kubectl edit</code> or <code>kubectl patch</code> (not <code>apply</code>), the <code>last-applied-configuration</code> will be <strong>outdated</strong>, and future <code>kubectl apply</code> operations might behave unexpectedly.
+<strong>That’s why <code>kubectl apply</code> should be your primary method for managing resources in declarative workflows.</strong></p>
+</blockquote>
+<hr />
+<h3 id="kubernetes-a-system-of-apis-and-a-key-value-store">Kubernetes: A System of APIs and a Key-Value Store<a class="headerlink" href="#kubernetes-a-system-of-apis-and-a-key-value-store" title="Permanent link">&para;</a></h3>
+<p>The <code>kube-apiserver</code> serves as the frontend to the control plane and handles all REST API requests. It performs several steps:</p>
+<ul>
+<li><strong>Authentication</strong>: Confirms that the requester is valid (via RBAC, service accounts, etc.).</li>
+<li><strong>Authorization</strong>: Checks if the requester is allowed to perform the action.</li>
+<li><strong>Validation</strong>: Verifies that the request complies with the Kubernetes schema.</li>
+<li><strong>Admission Control</strong>: Applies policies (e.g., quotas, security checks).</li>
+</ul>
+<p>If all checks pass, the <code>kube-apiserver</code> persists the resource in <code>etcd</code>, the distributed key-value store that acts as Kubernetes' source of truth.</p>
+<p>Kubernetes operates on a <strong>declarative model</strong>, meaning you declare the desired state, and the system works to maintain it:</p>
+<ul>
+<li>For <strong>reads</strong>: the API server fetches data from <code>etcd</code>.</li>
+<li>For <strong>writes</strong>: the API server stores new or updated objects in <code>etcd</code>.</li>
+</ul>
+<hr />
+<h3 id="the-3-way-reconciliation-loop-api-server-etcd-controllers">The 3-Way Reconciliation Loop: API Server, etcd, Controllers<a class="headerlink" href="#the-3-way-reconciliation-loop-api-server-etcd-controllers" title="Permanent link">&para;</a></h3>
+<p>At the heart of Kubernetes lies its reconciliation loop, which acts like a feedback-driven 3-way handshake between:</p>
+<ol>
+<li><strong>You (Desired State)</strong> — you declare what you want via <code>kubectl apply</code>.</li>
+<li><strong>etcd (Current State)</strong> — it stores the live state of all objects.</li>
+<li><strong>Controller (Actual State Manager)</strong> — it watches the state and enforces convergence.    </li>
+</ol>
+<p>The flow looks like this:</p>
+<ul>
+<li>You apply a Deployment (desired state).</li>
+<li>The <code>kube-apiserver</code> stores it in <code>etcd</code>.</li>
+<li>The <strong>Deployment Controller</strong>, running inside the <code>kube-controller-manager</code>, watches for changes to Deployments.</li>
+<li>It compares desired vs actual, and if there's a difference (e.g., fewer replicas than desired), it takes action (e.g., create new ReplicaSets or Pods).    </li>
+<li>These actions again go through the API server and are saved into <code>etcd</code>.</li>
+</ul>
+<p>This loop continues until the actual state matches the desired state. This is the magic behind Kubernetes self-healing.</p>
+<hr />
+<h3 id="who-watches-over-kubernetes-objects">Who Watches Over Kubernetes Objects?<a class="headerlink" href="#who-watches-over-kubernetes-objects" title="Permanent link">&para;</a></h3>
+<p>Every object in Kubernetes is watched by a controller that ensures it matches the desired state:</p>
+<ul>
+<li><strong>Pods</strong> are managed by a <strong>ReplicaSet</strong>.</li>
+<li><strong>ReplicaSets</strong> are managed by a <strong>Deployment</strong>.</li>
+<li>These are managed by controllers running in the <strong>kube-controller-manager</strong> binary.</li>
+</ul>
+<p>So, when a Deployment is applied, the <strong>Deployment Controller</strong> observes the Deployment resource and ensures the defined number of Pods are running. If there's a mismatch between the current and desired state, the controller adjusts accordingly (e.g., scaling Pods, initiating rolling updates).</p>
+<blockquote>
+<p><strong>Note</strong>: A <strong>Kubernetes Operator</strong> is a custom controller that extends Kubernetes to manage complex applications by packaging domain-specific logic.</p>
+</blockquote>
+<hr />
+<h3 id="where-does-a-pod-live-the-scheduler-decides">Where Does a Pod Live? The Scheduler Decides<a class="headerlink" href="#where-does-a-pod-live-the-scheduler-decides" title="Permanent link">&para;</a></h3>
+<p>Once the Deployment Controller determines that new Pods are needed, it delegates the scheduling decision to the <strong>Scheduler</strong>. The Scheduler evaluates available Nodes using:</p>
+<ul>
+<li>Resource availability (CPU, memory)</li>
+<li>Taints and tolerations</li>
+<li>Affinity/anti-affinity rules</li>
+<li>Node selectors and constraints</li>
+</ul>
+<p>It then sets the <code>nodeName</code> field in the Pod spec to assign it to a specific Node.</p>
+<blockquote>
+<p><strong>Note</strong>: The Scheduler only makes placement decisions; it doesn’t run Pods.</p>
+</blockquote>
+<hr />
+<h3 id="when-the-pod-is-born">When the Pod Is Born<a class="headerlink" href="#when-the-pod-is-born" title="Permanent link">&para;</a></h3>
+<p>Once scheduled, the Pod becomes part of the desired state for the <strong>Kubelet</strong>, which runs on each Node. The Kubelet:</p>
+<ul>
+<li>Pulls required container images</li>
+<li>Creates and starts containers</li>
+<li>Monitors health using liveness and readiness probes</li>
+<li>Sends status updates to the API server</li>
+</ul>
+<blockquote>
+<p><strong>Health Checks</strong>: If a container fails a liveness probe, it is restarted. If it fails a readiness probe, it's temporarily removed from service.</p>
+</blockquote>
+<hr />
+<h3 id="how-does-the-kubelet-pull-images">How Does the Kubelet Pull Images?<a class="headerlink" href="#how-does-the-kubelet-pull-images" title="Permanent link">&para;</a></h3>
+<p>The Kubelet interacts with the container runtime using the <strong>Container Runtime Interface (CRI)</strong>, a gRPC-based API. It connects to the runtime via a Unix socket:</p>
+<div class="highlight"><pre><span></span><code>/run/containerd/containerd.sock<span class="w">       </span><span class="c1"># for containerd</span>
+/var/run/crio/crio.sock<span class="w">              </span><span class="c1"># for CRI-O</span>
+</code></pre></div>
+<p>You can configure this using the <code>--container-runtime-endpoint</code> flag:</p>
+<div class="highlight"><pre><span></span><code>kubelet<span class="w"> </span>--container-runtime-endpoint<span class="o">=</span>unix:///run/containerd/containerd.sock
+</code></pre></div>
+<p>To verify the connection:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>crictl<span class="w"> </span>info
+</code></pre></div>
+<p>To check which socket the Kubelet is using:</p>
+<div class="highlight"><pre><span></span><code>ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>kubelet
+</code></pre></div>
+<p><strong>Flow Summary</strong>:</p>
+<ol>
+<li>Kubelet asks CRI to create a Pod sandbox (network namespace).</li>
+<li>CRI uses <code>runc</code> (or similar) to create it.</li>
+<li>Kubelet requests image download via CRI.</li>
+<li>Kubelet instructs CRI to start the container.</li>
+<li>Kubelet monitors the container via CRI.</li>
+</ol>
+<hr />
+<h3 id="pod-lifecycle-and-maintenance">Pod Lifecycle and Maintenance<a class="headerlink" href="#pod-lifecycle-and-maintenance" title="Permanent link">&para;</a></h3>
+<p>Once running, a Pod goes through different phases:</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Pending</code></td>
+<td>Accepted by the cluster, waiting to be scheduled or for images to download.</td>
+</tr>
+<tr>
+<td><code>Running</code></td>
+<td>Scheduled to a node, with at least one running container.</td>
+</tr>
+<tr>
+<td><code>Succeeded</code></td>
+<td>All containers exited successfully and won’t restart.</td>
+</tr>
+<tr>
+<td><code>Failed</code></td>
+<td>All containers exited, and at least one failed.</td>
+</tr>
+<tr>
+<td><code>Unknown</code></td>
+<td>Pod state cannot be determined, often due to communication issues.</td>
+</tr>
+</tbody>
+</table>
+<p>Kubernetes handles restarts via <code>restartPolicy</code>:</p>
+<ul>
+<li><strong>Initial crash</strong>: Container restarts immediately.</li>
+<li><strong>Repeated crashes</strong>: Backoff delays increase exponentially.</li>
+<li><strong>CrashLoopBackOff</strong>: Indicates repeated failures with backoff in place.</li>
+<li><strong>Backoff reset</strong>: If a container runs successfully for a set time, backoff resets.</li>
+</ul>
+<blockquote>
+<p><strong>Evicted Pods</strong>: Sometimes, Pods are terminated and marked as <code>Evicted</code> due to node-level resource pressure (e.g., memory or disk). This is not a failure in the Pod itself, but a protective measure by the kubelet. These Pods are removed to reclaim resources, and depending on the controller (e.g., Deployment or StatefulSet), they are typically recreated on another node.</p>
+</blockquote>
+<hr />
+<h3 id="what-about-kube-proxy">What about kube-proxy?<a class="headerlink" href="#what-about-kube-proxy" title="Permanent link">&para;</a></h3>
+<p>We talked about other components of Kubernetes but what about kube-proxy? <code>kube-proxy</code> does not <strong>directly</strong> involved during the <code>kubectl apply</code>But it <strong>plays a critical role afterward</strong>, once your Deployment results in Pods and <strong>Services</strong> being created.</p>
+<p>kube-proxy is the component that manages networking rules on each node to route traffic to the appropriate backend Pods. It handles:</p>
+<ul>
+<li><strong>Virtual IPs (ClusterIPs)</strong> for Services</li>
+<li><strong>NAT rules</strong> using <code>iptables</code>, <code>ipvs</code>, or <code>ebpf</code> (depending on config)</li>
+<li><strong>Load balancing</strong> between Pods behind a Service</li>
+<li><strong>NodePort exposure</strong> for Services if configured</li>
+</ul>
+<p>After the Pods from your Deployment are up and running and a Service is created, kube-proxy:</p>
+<ul>
+<li>Detects the creation of the Service (via watching the API Server).</li>
+<li>Sets up routing rules (e.g., iptables) so that:</li>
+<li>Requests to the Service IP and port are load balanced to backend Pods.</li>
+<li>Continuously watches for changes in Pod IPs and updates routing accordingly.</li>
+</ul>
+<blockquote>
+<p><strong>Note</strong>: For Pod-level networking (IP assignment, Pod-to-Pod reachability), Kubernetes uses <strong>CNI plugins</strong> (e.g., Calico, Flannel, Cilium). kube-proxy sits on top of that for Service abstraction.</p>
+</blockquote>
+<hr />
+<h3 id="events-and-observability">Events and Observability<a class="headerlink" href="#events-and-observability" title="Permanent link">&para;</a></h3>
+<p>Kubernetes is event-driven. During every step — from applying manifests to scheduling, pulling images, or crashing — Kubernetes components emit <strong>Events</strong>. These are stored in the API server and visible via:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>describe<span class="w"> </span>pod<span class="w"> </span>&lt;pod-name&gt;
+</code></pre></div>
+<p>You'll often see logs like:</p>
+<ul>
+<li>"Successfully assigned pod..."</li>
+<li>"Started container..."</li>
+<li>"Back-off restarting failed container..."</li>
+</ul>
+<p>These are critical for debugging the lifecycle of resources.</p>
+<hr />
+<h3 id="to-summarize">To summarize<a class="headerlink" href="#to-summarize" title="Permanent link">&para;</a></h3>
+<p>This entire process demonstrates how Kubernetes self-heals, maintains state, and abstracts away the operational complexity of deploying and running containers at scale.</p>
+<p>Think of it like this:</p>
+<ul>
+<li>You (<code>kubectl</code>) send a construction plan to the city (<code>API server</code>).</li>
+<li>Builders (<code>controllers</code>, <code>scheduler</code>, <code>kubelet</code>) build the house (<code>Pods</code>, <code>ReplicaSets</code>).</li>
+<li>kube-proxy is the traffic engineer: it comes in after the houses are built and makes sure people (network traffic) know how to get there.</li>
+</ul>
+<p>And all of it is made possible by the <strong>feedback loop</strong> between your declaration, the control plane, and the controllers that keep things aligned — always striving for <strong>desired state = actual state</strong>.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 Mahsa Soleimani
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/divergentluna" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://linkedin.com/in/mahsasoleimani/" target="_blank" rel="noopener" title="linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5m282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.path", "toc.integrate", "search.suggest", "search.highlight", "search.share"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>
