@@ -56,5 +56,7 @@ nav:
   - Posts:
       - Linux:
           - Linux Network NameSpaces: posts/linux/linux-netns.md
+      - Kubernetes:
+          - Understanding `kubectl apply` in Kubernetes: posts/kubernetes/kubectl-apply.md
   # - About: aboutme.md #TODO
 
